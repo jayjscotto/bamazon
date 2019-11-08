@@ -14,11 +14,11 @@ var connection = mysql.createConnection({
 connection.connect(function (err) {
     if (err) throw err;
     readDB();
+
 });
 
 const productArr = [];
-
-
+let maxNum;
 
 function readDB() {
     console.log(`WELCOME TO BAMAZON: B(ETTER THAN)AMAZON`);
@@ -35,30 +35,54 @@ function readDB() {
 
             console.log(itemListing);
         }
+        maxNum = productArr.length;
     })
     introPrompt();
 };
 
 
+// function validateInput(num) {
+//     if (Number.isInterger(num) && num > -1) {
+//         return true;
+//     } else {
+//         return `Please enter valid number.`
+//     }
+// }
+
 function introPrompt() {
     inquirer.prompt({
+        type: "input",
         name: "itemid",
-        message: "Please enter the product ID of the product you would like to buy:"
-    }).then(
-        function (res, err) {
-            if (err) throw err;
+        message: "Please enter the product ID of the product you would like to buy:",
+        validate: function (value) {
+            if (!isNaN(value) && value > -1 && value < maxNum) {
+                return true;
+            } else {
+                return `Please enter valid number greater than zero and less than ${maxNum + 1}.`
+            }
+        }
+    }).then(answers => {
 
-            let product = productArr[res.itemid].product_name;
-            let productID = productArr[res.itemid].item_id;
+            index = parseInt(answers.itemid) - 1
+            let product = productArr[index].product_name;
+            let productID = productArr[index].item_id;
 
             inquirer.prompt({
+                type: "input",
                 name: "quantity",
-                message: `OK, ${product}. How many?`
-            }).then(
-                function (res, err) {
-                    if (err) throw err;
+                message: `OK, ${product}. How many?`,
+                validate: function (value) {
+                    if (!isNaN(value) && value > -1) {
+                        return true;
+                    } 
+                    ////fix conditionals here
+                    else {
+                        return `Please enter valid number greater than zero and less than ${productArr.length}.`
+                    }
+                }
+            }).then(answers => {
                 
-                    let quantity = res.quantity;
+                    let quantity = answers.quantity;
 
                     console.log(`Ok... checking invetory for ${product}, ${quantity} units`);
                     makePurchase(productID, quantity);
@@ -74,7 +98,17 @@ function makePurchase(item, number) {
 
         if (itemQuantity > number) {
             console.log(`Purchase made! Package being shipped now....`);
-            updateItem(itemID, itemQuantity, number);
+            // updateItem(itemID, itemQuantity, number);
+                let newQuantity =  (itemQuantity - number)
+                console.log(newQuantity);
+            connection.query("UPDATE bamazon SET stock_quantity = ? WHERE item_id = ?", [{
+                stock_quantity: newQuantity,
+                item_id: itemID
+            }], function(err, res) {
+                console.log(`Quantity Updated!`);
+                console.log(res)
+                return shopPrompt();
+            })
         } else {
             console.log(`Insufficient quantity!`);
             return shopPrompt();
@@ -84,15 +118,17 @@ function makePurchase(item, number) {
 }
 
 function updateItem(item_id, currentQuantity, orderQuantity) {
+    newQuantity =  (currentQuantity - orderQuantity)
+    console.log(newQuantity);
     connection.query("UPDATE bamazon SET stock_quantity = ? WHERE item_id = ?", [{
-        newQuantity: (currentQuantity - orderQuantity),
+        stock_quantity: newQuantity,
         item_id: item_id
     }], function(err, res) {
         console.log(`Quantity Updated!`);
-        readDB();
+        console.log(res)
+        return shopPrompt();
     })
 }
-
 
 function shopPrompt() {
     inquirer.prompt({
@@ -100,8 +136,8 @@ function shopPrompt() {
         type: "list",
         message: "Would you like to shop again?",
         choices: ["YES", "NO"]
-    }).then(function (err, res) {
-        if (res.retry === "yes") {
+    }).then(answers => {
+        if (answers.retry === "YES") {
             return readDB();
         } else {
             console.log("Ok! See you soon!");
