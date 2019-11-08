@@ -13,19 +13,24 @@ var connection = mysql.createConnection({
 
 connection.connect(function (err) {
     if (err) throw err;
-    readDB();
 
+    //read the database
+    readDB();
 });
 
+//global variables (product list and highest product id)
 const productArr = [];
 let maxNum;
 
+//reads from DB, returns each item listing
 function readDB() {
     console.log(`WELCOME TO BAMAZON: B(ETTER THAN)AMAZON`);
 
     const query = connection.query("SELECT * FROM bamazon", function (err, res) {
         if (err) throw err;
+        //new line
         console.log(`\n`)
+        //iterates over response length, pushes each item to the array 
         for (let i = 0; i < res.length; i++) {
             let price = parseInt(res[i].price);
 
@@ -37,19 +42,11 @@ function readDB() {
         }
         maxNum = productArr.length;
     })
-    introPrompt();
+    idPrompt();
 };
 
-
-// function validateInput(num) {
-//     if (Number.isInterger(num) && num > -1) {
-//         return true;
-//     } else {
-//         return `Please enter valid number.`
-//     }
-// }
-
-function introPrompt() {
+//prompts for item-ID
+function idPrompt () {
     inquirer.prompt({
         type: "input",
         name: "itemid",
@@ -63,10 +60,11 @@ function introPrompt() {
         }
     }).then(answers => {
 
-            index = parseInt(answers.itemid) - 1
-            let product = productArr[index].product_name;
-            let productID = productArr[index].item_id;
+        index = parseInt(answers.itemid) - 1
+        let product = productArr[index].product_name;
+        let productID = productArr[index].item_id;
 
+        //prompts for number of units
             inquirer.prompt({
                 type: "input",
                 name: "quantity",
@@ -93,22 +91,14 @@ function introPrompt() {
 function makePurchase(item, number) {
     
     connection.query("SELECT * FROM bamazon WHERE item_id = ?", [item], function(err, res) {
+
         const itemID = res[0].item_id;
         const itemQuantity = res[0].stock_quantity;
 
         if (itemQuantity > number) {
+
             console.log(`Purchase made! Package being shipped now....`);
-            // updateItem(itemID, itemQuantity, number);
-                let newQuantity =  (itemQuantity - number)
-                console.log(newQuantity);
-            connection.query("UPDATE bamazon SET stock_quantity = ? WHERE item_id = ?", [{
-                stock_quantity: newQuantity,
-                item_id: itemID
-            }], function(err, res) {
-                console.log(`Quantity Updated!`);
-                console.log(res)
-                return shopPrompt();
-            })
+            updateItem(itemID, itemQuantity, number);
         } else {
             console.log(`Insufficient quantity!`);
             return shopPrompt();
@@ -118,16 +108,19 @@ function makePurchase(item, number) {
 }
 
 function updateItem(item_id, currentQuantity, orderQuantity) {
-    newQuantity =  (currentQuantity - orderQuantity)
-    console.log(newQuantity);
-    connection.query("UPDATE bamazon SET stock_quantity = ? WHERE item_id = ?", [{
-        stock_quantity: newQuantity,
-        item_id: item_id
-    }], function(err, res) {
-        console.log(`Quantity Updated!`);
-        console.log(res)
-        return shopPrompt();
-    })
+    let newQuantity =  (currentQuantity - orderQuantity)
+        connection.query(
+            "UPDATE bamazon SET ? WHERE ?", [
+            {
+                stock_quantity: newQuantity
+            },
+            {
+                item_id: item_id
+            }
+        ], function(err, res) {
+            console.log(`Quantity Updated!`);
+            return shopPrompt();
+        })
 }
 
 function shopPrompt() {
@@ -141,7 +134,7 @@ function shopPrompt() {
             return readDB();
         } else {
             console.log("Ok! See you soon!");
-            return false;
+            return connection.end();
         }
     })
 }
