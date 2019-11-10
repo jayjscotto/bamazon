@@ -175,8 +175,11 @@ function addInventory() {
     })
 }
 
+//add a new product
 function addNewProduct() {
-    console.log("---ADD NEW BAMAZON ITEM---")
+    console.log("---ADD NEW BAMAZON ITEM---");
+
+    //prompt user for pertinent product information
     inquirer.prompt([{
         name: "newItemName",
         type: "text",
@@ -197,20 +200,24 @@ function addNewProduct() {
         type: "text",
         message: "Please enter the quantity of the item in stock:"
     }]).then(answers => {
-        let itemName = answers.newItemName;
-        let itemPrice = answers.newItemPrice;
-        let itemDepartment = answers.newItemDepartment;
-        let itemStock = answers.newItemStock;
 
-        var query = "INSERT INTO bamazon (product_name, department_name, price, stock_quantity) VALUES (?,?,?,?)";
+        var query = "INSERT INTO bamazon SET ?";
 
-        connection.query(query, [{itemName}, {itemPrice}, {itemDepartment}, {itemStock}], function (err, res) {
-            console.log(res);
+        connection.query(query, [
+            {
+                product_name: answers.newItemName,
+                price: answers.newItemPrice,
+                department_name: answers.newItemDepartment,
+                stock_quantity: answers.newItemStock
+            }
+        ], function (err, res) {
             console.log(`${answers.newItemName} will be listed under Item ID: ${res.insertId}`);
+            return returnMain();
         });
     })
 }
 
+//option to return back to the main menu without distorting UI.
 function returnMain () {
     inquirer.prompt({
         name: "return",
