@@ -112,11 +112,12 @@ function makePurchase(item, number) {
 
         const itemID = res[0].item_id;
         const itemQuantity = res[0].stock_quantity;
+        const price = res[0].price;
 
         //if we have enough items to meet the order quantity
         if (itemQuantity > number) {
             console.log(`Purchase made! Package being shipped now....`);
-            updateItem(itemID, itemQuantity, number);
+            updateItem(itemID, itemQuantity, number, price);
         } else {
             console.log(`Insufficient quantity!`);
             return shopPrompt();
@@ -126,12 +127,18 @@ function makePurchase(item, number) {
 }
 
 //update the DB inventory minus the number of items ordered
-function updateItem(item_id, currentQuantity, orderQuantity) {
-    let newQuantity =  (currentQuantity - orderQuantity)
-    const query = "UPDATE bamazon SET ? WHERE ?"
+function updateItem(item_id, currentQuantity, orderQuantity, itemPrice) {
+    //declare query variables
+    let newQuantity =  (currentQuantity - orderQuantity);
+    let totalPrice = orderQuantity * itemPrice;
+    //update query
+    const query = "UPDATE bamazon SET ?, ? WHERE ?"
     connection.query(query, [
             {
                 stock_quantity: newQuantity
+            },
+            {
+                product_sales: totalPrice
             },
             {
                 item_id: item_id

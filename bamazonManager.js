@@ -25,7 +25,6 @@ function managePrompt() {
         message: "Please select an option from the following: ",
         choices: ["View All Products", "View Low Inventory(<15)", "Add To Inventory", "Add New Product", "Exit"]
     }).then(answer => {
-        console.log(answer.manager);
         switch(answer.manager) {
             case "View All Products":
                 return readDB();
@@ -165,6 +164,7 @@ function addInventory() {
                     item_id: focusID
                     }
                 ], function (err, res) {
+                    if (err) throw err;
                     //log update confirmation
                     console.log(`Inventory for ${focusProduct} successfully updated.`);
                     console.log(res.message);
@@ -211,6 +211,8 @@ function addNewProduct() {
                 stock_quantity: answers.newItemStock
             }
         ], function (err, res) {
+            if (err) throw err;
+
             console.log(`${answers.newItemName} will be listed under Item ID: ${res.insertId}`);
             return returnMain();
         });
