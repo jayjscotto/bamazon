@@ -33,8 +33,8 @@ function managePrompt() {
                 return readLowQuantity();
             case "Add To Inventory":
                 return addInventory();
-            // case "Add New Product":
-            //     return addNewProduct();
+            case "Add New Product":
+                return addNewProduct();
             case "Exit":
                 console.log("Logged out.")
                 return connection.end();
@@ -130,16 +130,19 @@ function addInventory() {
                 console.log("Oops! Looks like we don't have any matching Item ID for that item! Try Again.")
                 return addInventory();
             } 
-            
-            let focusID = res.item_id;
-            let focusProduct = res.product_name;
-            let originalCount = res.stock_quantity;
+
+            let focusID = res[0].item_id;
+            let focusProduct = res[0].product_name;
+            let originalCount = res[0].stock_quantity;
+
+            let item
             
             //new table object
-            const table = new Table({
+            var table = new Table({
                 head: ["Item ID", "Product Name", "Quantity Currently In Stock"]
-            })
-            table.push(res.item_id, res.product_name, res.stock_quantity);
+            });
+
+            table.push([focusID, focusProduct, originalCount]);
             //log new table object so user can see/confirm the item they will add quantity to
             console.log(table.toString());
 
@@ -152,16 +155,60 @@ function addInventory() {
                 let newCount = originalCount + answer.addQuantity;
 
                 console.log(`\r\nOK! Updating stock quantity for ItemID: ${focusID} Item: ${focusProduct}`);
-                
-                const query = "UPDATE bamazon SET stock_quantity = ? WHERE item_id = ?";
-                connection.query(query, [{newCount},{focusID}], function (err, res) {
-                    console.log(res);
+                //db query
+                const query = "UPDATE bamazon SET ? WHERE ?";
+                connection.query(query, [
+                    {
+                    stock_quantity: newCount
+                    },
+                    {
+                    item_id: focusID
+                    }
+                ], function (err, res) {
+                    //log update confirmation
+                    console.log(`Inventory for ${focusProduct} successfully updated.`);
+                    console.log(res.message);
+                    return returnMain();
                 })
             })
         })
     })
-   
+}
 
+function addNewProduct() {
+    console.log("---ADD NEW BAMAZON ITEM---")
+    inquirer.prompt([{
+        name: "newItemName",
+        type: "text",
+        message: "Please enter the name of the product you would like to add:"
+    },
+    {
+        name: "newItemPrice",
+        type: "text",
+        message: "Please enter listing price per unit:"
+    },
+    {
+        name: "newItemDepartment",
+        type: "text",
+        message: "Please enter the department the item will list under:"
+    },
+    {
+        name: "newItemStock",
+        type: "text",
+        message: "Please enter the quantity of the item in stock:"
+    }]).then(answers => {
+        let itemName = answers.newItemName;
+        let itemPrice = answers.newItemPrice;
+        let itemDepartment = answers.newItemDepartment;
+        let itemStock = answers.newItemStock;
+
+        var query = "INSERT INTO bamazon (product_name, department_name, price, stock_quantity) VALUES (?,?,?,?)";
+
+        connection.query(query, [{itemName}, {itemPrice}, {itemDepartment}, {itemStock}], function (err, res) {
+            console.log(res);
+            console.log(`${answers.newItemName} will be listed under Item ID: ${res.insertId}`);
+        });
+    })
 }
 
 function returnMain () {

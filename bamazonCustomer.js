@@ -138,7 +138,7 @@ function updateItem(item_id, currentQuantity, orderQuantity) {
             }
         ], function(err, res) {     
             if (err) throw err;
-            console.log(`Quantity Updated!`);
+            console.log(`Success!`);
             //prompt the customer to continue shopping
             return shopPrompt();
         })
