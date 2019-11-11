@@ -85,7 +85,14 @@ function createDepartment() {
         inquirer.prompt({
             name: "departmentOverhead",
             type: "number",
-            message: "Please enter the overhead costs for this department (Do not use symbols): "
+            message: "Please enter the overhead costs for this department (Do not use symbols): ",
+            validate: function (value) {
+                if (!isNaN(value) && value > -1) {
+                    return true;
+                } else {
+                    return `Please enter valid number greater than zero and less than ${maxNum + 1}.`
+                }
+            }
         }).then(answer => {
             
             let deptOverhead = answer.departmentOverhead;
